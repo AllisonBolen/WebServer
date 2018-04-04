@@ -60,8 +60,8 @@ class TcpServerThread extends Thread {
                 // call parse
                 data = parseRequest(message);
                 // do stuff depending on data
-                System.out.println(" buffer: " + a);
-                //System.out.println("Got from client: " + message);
+//                System.out.println("Got from client: " + message);
+                //send(sc, "testing");
             }
         } catch (IOException e) {
             // print error
@@ -71,7 +71,18 @@ class TcpServerThread extends Thread {
     }
 
     public ArrayList<String> parseRequest(String a) {
-        // parse the shit and return it
+        // parse the dat into a list contain all words sent in seperated by space
+        Scanner line = new Scanner(a);
+        ArrayList<String> data = new ArrayList<String>();
+        System.out.print("this is the data we were sent:\n");
+
+        while (line.hasNext()) {
+//            Scanner space = new Scanner(line.next()).useDelimiter("\\s");
+//            while (space.hasNext()) {
+//                data.add(space.next());
+            System.out.print(line.next()+ " \n" );
+//            }
+        }
         return null;
     }
 
@@ -81,8 +92,17 @@ class TcpServerThread extends Thread {
 
     }
 
-    public void send(ByteBuffer b, byte[] info){
-        // send the shit
+    public void send(SocketChannel socket, String info) {
+
+        ByteBuffer buf = ByteBuffer.wrap(info.getBytes());
+        buf.rewind();
+
+        try {
+            socket.write(buf);
+        } catch (IOException e) {
+            // print error
+            System.out.println("Got an IO Exception HERE 5");
+        }
     }
 
 }
