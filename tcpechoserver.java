@@ -5,6 +5,7 @@ import java.nio.channels.*;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap; // https://stackoverflow.com/questions/2836267/concurrenthashmap-in-java
 import java.util.Vector;
+import java.util.ArrayList;
 
 class tcpechoserver {
     public static void main(String args[]) {
@@ -39,6 +40,7 @@ class tcpechoserver {
 class TcpServerThread extends Thread {
     SocketChannel sc;
     private boolean running = true;
+    private ArrayList<String> data;
 
     TcpServerThread(SocketChannel channel) {
         sc = channel;
@@ -55,7 +57,11 @@ class TcpServerThread extends Thread {
                 byte[] a = new byte[buffer.remaining()];
                 buffer.get(a);
                 String message = new String(a);
-                System.out.println("Got from client: " + message);
+                // call parse
+                data = parseRequest(message);
+                // do stuff depending on data
+                System.out.println(" buffer: " + a);
+                //System.out.println("Got from client: " + message);
             }
         } catch (IOException e) {
             // print error
@@ -63,4 +69,20 @@ class TcpServerThread extends Thread {
         }
 
     }
+
+    public ArrayList<String> parseRequest(String a) {
+        // parse the shit and return it
+        return null;
+    }
+
+    public byte[] createResponse(ArrayList<String> info) {
+        // create the response string
+        return null;
+
+    }
+
+    public void send(ByteBuffer b, byte[] info){
+        // send the shit
+    }
+
 }
