@@ -21,22 +21,25 @@ class tcpechoserver {
             if (args.length == 1) {
                 // not logs file
                 inputCheck(args[0], ".", "none");
+                System.out.println("You are connected on port: " + args[0] + ", Searching from the directory the server runs from, and logs are printed to the server.");
             } else if (args.length == 2) {
                 // we have a dirroot to look from
                 inputCheck(args[0], args[1], "none");
+                System.out.println("You are connected on port: " + args[0] + ", Searching from directory: " + args[1] + ", and logs are printed to the server.");
             } else if (args.length == 3) {
                 // given a log file to write to
                 inputCheck(args[0], args[1], args[2]);
+                System.out.println("You are connected on port: " + args[0] + ", Searching from directory: " + args[1] + ", and logging to the file: " + args[2] + ".");
             } else {
                 // invlaid user input
                 System.out.println("You have the wrong number of agruments. Use: 'java <program-name> <port-num> <path-to-root-dir> <logfile>'.");
+                System.exit(0);
             }
 
             // valid input
             int port = Integer.parseInt(args[0]);
             ServerSocketChannel c = ServerSocketChannel.open();
             c.bind(new InetSocketAddress(port));
-            int count = 0;
             while (true) {
                 SocketChannel sc = c.accept();
                 System.out.println("Client Connected: " + sc.getRemoteAddress());
@@ -46,7 +49,6 @@ class tcpechoserver {
                     clientMap.putIfAbsent(sc.getRemoteAddress(), t.getName());
                 }
                 System.out.println(clientMap.toString());
-                count++;
             }
         } catch (IOException e) {
             System.out.println("Got an Exception");
@@ -79,7 +81,7 @@ class TcpServerThread extends Thread {
                 byte[] a = new byte[buffer.remaining()];
                 buffer.get(a);
                 String message = new String(a);
-                System.out.println(message);
+                //System.out.println(message);
                 // call parse
                 data = parseRequest(message);
                 createResponse(new ArrayList<String>());
@@ -98,7 +100,8 @@ class TcpServerThread extends Thread {
         System.out.print("this is the data we were sent:\n");
 
         while (line.hasNext()) {
-            System.out.print(line.next() + " \n");
+           // System.out.print(line.next() + " \n");
+            data.add( line.next());
         }
         return null;
     }
@@ -114,7 +117,7 @@ class TcpServerThread extends Thread {
         String valResponse = "HTTP/1.1 200 OK\r\n" +
                 "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
                 "Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-                "Content-Length: 88\r\n" +
+                "Content-Length: 52\r\n" +
                 "Content-Type: text/html\r\n" +
                 //"Connection: Closed\r\n" +
                 "\r\n" +
