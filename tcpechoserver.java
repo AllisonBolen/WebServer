@@ -6,6 +6,11 @@ import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap; // https://stackoverflow.com/questions/2836267/concurrenthashmap-in-java
 import java.util.Vector;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.TimeZone;
+
 
 class tcpechoserver {
     public static void main(String args[]) {
@@ -74,10 +79,10 @@ class TcpServerThread extends Thread {
                 byte[] a = new byte[buffer.remaining()];
                 buffer.get(a);
                 String message = new String(a);
+                System.out.println(message);
                 // call parse
                 data = parseRequest(message);
-                // do stuff depending on data
-                send(sc, "testing");
+                createResponse(new ArrayList<String>());
             }
         } catch (IOException e) {
             // print error
@@ -100,7 +105,27 @@ class TcpServerThread extends Thread {
 
     public byte[] createResponse(ArrayList<String> info) {
         // create the response string
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 
+
+        String valResponse = "HTTP/1.1 200 OK\r\n" +
+                "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                "Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
+                "Content-Length: 88\r\n" +
+                "Content-Type: text/html\r\n" +
+                //"Connection: Closed\r\n" +
+                "\r\n" +
+                "<html>\n" +
+                "<body>\n" +
+                "<h1>Hello, World!</h1>\n" +
+                "</body>\n" +
+                "</html>";
+        //System.out.println(valResponse);
+
+        send(sc, valResponse);
         return null;
 
     }
@@ -112,10 +137,21 @@ class TcpServerThread extends Thread {
 
         try {
             socket.write(buf);
+            //setRunning(false);
+
+
         } catch (IOException e) {
             // print error
             System.out.println("Got an IO Exception HERE 5");
         }
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
     }
 
 }
