@@ -100,8 +100,22 @@ class TcpServerThread extends Thread {
         System.out.print("this is the data we were sent:\n");
 
         while (line.hasNext()) {
-           // System.out.print(line.next() + " \n");
+            // System.out.print(line.next() + " \n");
             data.add( line.next());
+        }
+        return null;
+    }
+
+    public byte[] fileToBytes(File file){
+        try{
+            byte[] bytesArray = new byte[(int) file.length()];
+            FileInputStream fis = new FileInputStream(file);
+            fis.read(bytesArray); //read file into bytes[]
+            fis.close();
+            return bytesArray;
+        }
+        catch(Exception e){
+            System.out.println("Error Loading file");
         }
         return null;
     }
@@ -117,16 +131,11 @@ class TcpServerThread extends Thread {
         String valResponse = "HTTP/1.1 200 OK\r\n" +
                 "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
                 "Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-                "Content-Length: 52\r\n" +
+                "Content-Length:" + (int)(fileToBytes(new File("index.html"))).length + "\r\n" +
                 "Content-Type: text/html\r\n" +
                 //"Connection: Closed\r\n" +
-                "\r\n" +
-                "<html>\n" +
-                "<body>\n" +
-                "<h1>Hello, World!</h1>\n" +
-                "</body>\n" +
-                "</html>";
-        //System.out.println(valResponse);
+                "\r\n";
+
 
         send(sc, valResponse);
         return null;
@@ -134,13 +143,16 @@ class TcpServerThread extends Thread {
     }
 
     public void send(SocketChannel socket, String info) {
-
-        ByteBuffer buf = ByteBuffer.wrap(info.getBytes());
-        buf.rewind();
+        ByteBuffer buf = ByteBuffer.allocate((int)(info.getBytes().length) + (int)fileToBytes(new File("index.html")).length);
+        buf.put(info.getBytes());
+        buf.put(fileToBytes(new File("index.html")));
+        buf.flip();
+        //ByteBuffer buf = ByteBuffer.wrap(info.getBytes());
+        //buf.rewind();
 
         try {
             socket.write(buf);
-            //setRunning(false);
+
 
 
         } catch (IOException e) {
@@ -156,17 +168,17 @@ class TcpServerThread extends Thread {
     public void setRunning(boolean running) {
         this.running = running;
     }
-	
-	public Boolean fileExists(String fileName) {
+
+    public Boolean fileExists(String fileName) {
         File myFile = new File(fileName);
         if (myFile.exists() && !myFile.isDirectory()) {
             return true;
         }
         return false;
     }
-    
+
     public double fileSize(String fileName) {
-    	File myFile = new File(fileName);
+        File myFile = new File(fileName);
         if (myFile.exists() && !myFile.isDirectory()) {
             //System.out.println("Size of file: " + fileSize);
             double count = myFile.length();
@@ -176,5 +188,4 @@ class TcpServerThread extends Thread {
             System.out.println("The file does not exist!");
         return 0;
     }
-
 }
