@@ -61,6 +61,24 @@ class tcpechoserver {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TcpServerThread extends Thread {
     SocketChannel sc;
     private boolean running = true;
@@ -85,7 +103,7 @@ class TcpServerThread extends Thread {
                 // call parse
                 data = parseRequest(message);
                 System.out.println(data);
-                createResponse(new ArrayList<String>());
+                createResponse(data);
             }
         } catch (IOException e) {
             // print error
@@ -127,25 +145,36 @@ class TcpServerThread extends Thread {
                 "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 
+	if(fileExists(info.get(2))){
+		String valResponse = "HTTP/1.1 200 OK\r\n" +
+		        "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+		        "Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
+		        "Content-Length:" + (int)(fileToBytes(new File("index.html"))).length + "\r\n" +
+		        "Content-Type: text/html\r\n" +
+		        //"Connection: Closed\r\n" +
+		        "\r\n";
+		send(sc, valResponse, info.get(2));
+	}
+	else{
+		String notFoundResponse = "HTTP/1.1 404 NOT FOUND\r\n" +
+		        "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+		        "Last-Modified: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+		        "Content-Length:" + (int)(fileToBytes(new File("notfound.html"))).length + "\r\n" +
+		        "Content-Type: text/html\r\n" +
+		        //"Connection: Closed\r\n" +
+		        "\r\n";
+		send(sc, notFoundResponse, "notfound.html");		
+	
 
-        String valResponse = "HTTP/1.1 200 OK\r\n" +
-                "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-                "Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-                "Content-Length:" + (int)(fileToBytes(new File("index.html"))).length + "\r\n" +
-                "Content-Type: text/html\r\n" +
-                //"Connection: Closed\r\n" +
-                "\r\n";
-
-
-        send(sc, valResponse);
+	}
         return null;
 
     }
 
-    public void send(SocketChannel socket, String info) {
-        ByteBuffer buf = ByteBuffer.allocate((int)(info.getBytes().length) + (int)fileToBytes(new File("index.html")).length);
+    public void send(SocketChannel socket, String info, String filename) {
+        ByteBuffer buf = ByteBuffer.allocate((int)(info.getBytes().length) + (int)fileToBytes(new File(filename)).length);
         buf.put(info.getBytes());
-        buf.put(fileToBytes(new File("index.html")));
+        buf.put(fileToBytes(new File(filename)));
         buf.flip();
         //ByteBuffer buf = ByteBuffer.wrap(info.getBytes());
         //buf.rewind();
