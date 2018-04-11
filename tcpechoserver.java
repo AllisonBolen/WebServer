@@ -195,7 +195,7 @@ class TcpServerThread extends Thread {
 				"\r\n";
 			send(sc, homeResponse, "index.html");
 		}
-		else if(fileExists(filename)){
+		else if(fileExists(filename) && (info.get(1).contains(".html") || info.get(1).contains(".HTML"))){
 			String valResponse = "HTTP/1.1 200 OK\r\n" +
 				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
 				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
@@ -204,7 +204,27 @@ class TcpServerThread extends Thread {
 				//"Connection: Closed\r\n" +
 				"\r\n";
 			send(sc, valResponse, filename);
+		}
 
+		else if(fileExists(filename) && (info.get(1).contains(".txt") || info.get(1).contains(".TXT"))){
+			String valResponse = "HTTP/1.1 200 OK\r\n" +
+				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
+				"Content-Length:" + (int)(fileToBytes(new File(filename))).length + "\r\n" +
+				"Content-Type: text/plain\r\n" +
+				//"Connection: Closed\r\n" +
+				"\r\n";
+			send(sc, valResponse, filename);
+		}
+		else if(fileExists(filename) && (info.get(1).contains(".jpeg") || info.get(1).contains(".JPEG") || info.get(1).contains(".jpg") || info.get(1).contains(".JPG"))){
+			String valResponse = "HTTP/1.1 200 OK\r\n" +
+				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
+				"Content-Length:" + (int)(fileToBytes(new File(filename))).length + "\r\n" +
+				"Content-Type: image/jpeg\r\n" +
+				//"Connection: Closed\r\n" +
+				"\r\n";
+			send(sc, valResponse, filename);
 		}
 		else{
 			String notFoundResponse = "HTTP/1.1 404 NOT FOUND\r\n" +
