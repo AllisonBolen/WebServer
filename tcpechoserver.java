@@ -55,7 +55,7 @@ class tcpechoserver {
         }
     }
 
-    public Boolean fileExists(String fileName) {
+    public Boolean DirectoryExists(String fileName) {
         File myFile = new File(fileName);
         if (myFile.exists() && !myFile.isDirectory()) {
             return true;
@@ -65,6 +65,7 @@ class tcpechoserver {
 
     public static ArrayList<Boolean> inputCheck(String p, String dir, String logfile) {
         // checks for user input and
+        ArrayList<String> data = new ArrayList<String>();
 
         // check port value
         int port = Integer.parseInt(p);
@@ -72,32 +73,33 @@ class tcpechoserver {
             System.out.println("Your port is invalid");
             System.exit(0);
         }
-
-        if( !dir.equals("none")){
-            
+        else{
+            data.add(p);
         }
 
-        return null;
+        if( !dir.equals(".")){
+            if(fileExists(dir)){
+                data.add(dir);
+            } else{
+                System.exit(0);
+            }
+        }else{
+            data.add(".")// default
+        }
+
+        if( !logFile.equals("none")){
+            if(fileExists(dir)){
+                data.add(dir);
+            } else{
+                System.exit(0);
+            }
+        }else{
+            data.add("none");
+        }
+
+        return data;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class TcpServerThread extends Thread {
     SocketChannel sc;
