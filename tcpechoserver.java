@@ -183,38 +183,52 @@ class TcpServerThread extends Thread {
 	String filename = info.get(1).substring(1, info.get(1).length());
 	//System.out.println("FILENAME REQUESTED: " + filename);
 
-	if(info.get(1).equals("/") || info.get(1).equals("/index.html")){
-		String homeResponse = "HTTP/1.1 200 OK\r\n" +
-		        "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-		        "Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-		        "Content-Length:" + (int)(fileToBytes(new File("index.html"))).length + "\r\n" +
-		        "Content-Type: text/html\r\n" +
-		        //"Connection: Closed\r\n" +
-		        "\r\n";
-		send(sc, homeResponse, "index.html");
-	}
-	else if(fileExists(filename)){
-		String valResponse = "HTTP/1.1 200 OK\r\n" +
-		        "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-		        "Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-		        "Content-Length:" + (int)(fileToBytes(new File(filename))).length + "\r\n" +
-		        "Content-Type: text/html\r\n" +
-		        //"Connection: Closed\r\n" +
-		        "\r\n";
-		send(sc, valResponse, filename);
+	if(info.get(0).equals("GET")){
 
+		if(info.get(1).equals("/") || info.get(1).equals("/index.html")){
+			String homeResponse = "HTTP/1.1 200 OK\r\n" +
+				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
+				"Content-Length:" + (int)(fileToBytes(new File("index.html"))).length + "\r\n" +
+				"Content-Type: text/html\r\n" +
+				//"Connection: Closed\r\n" +
+				"\r\n";
+			send(sc, homeResponse, "index.html");
+		}
+		else if(fileExists(filename)){
+			String valResponse = "HTTP/1.1 200 OK\r\n" +
+				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
+				"Content-Length:" + (int)(fileToBytes(new File(filename))).length + "\r\n" +
+				"Content-Type: text/html\r\n" +
+				//"Connection: Closed\r\n" +
+				"\r\n";
+			send(sc, valResponse, filename);
+
+		}
+		else{
+			String notFoundResponse = "HTTP/1.1 404 NOT FOUND\r\n" +
+				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+				"Last-Modified: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+				"Content-Length:" + (int)(fileToBytes(new File("notfound.html"))).length + "\r\n" +
+				"Content-Type: text/html\r\n" +
+				//"Connection: Closed\r\n" +
+				"\r\n";
+			send(sc, notFoundResponse, "notfound.html");		
+		
+
+		}
 	}
+
 	else{
-		String notFoundResponse = "HTTP/1.1 404 NOT FOUND\r\n" +
-		        "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-		        "Last-Modified: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-		        "Content-Length:" + (int)(fileToBytes(new File("notfound.html"))).length + "\r\n" +
-		        "Content-Type: text/html\r\n" +
-		        //"Connection: Closed\r\n" +
-		        "\r\n";
-		send(sc, notFoundResponse, "notfound.html");		
-	
-
+		String notSupportedResponse = "HTTP/1.1 501 NOT IMPLEMENTED\r\n" +
+				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
+				"Content-Length:" + (int)(fileToBytes(new File("notsupported.html"))).length + "\r\n" +
+				"Content-Type: text/html\r\n" +
+				//"Connection: Closed\r\n" +
+				"\r\n";
+			send(sc, notSupportedResponse, "notsupported.html");
 	}
         return null;
 
