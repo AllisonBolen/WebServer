@@ -17,18 +17,19 @@ class tcpechoserver {
         Scanner scan = new Scanner(System.in);
         // map to store all connected client ips and threads
         ConcurrentHashMap<SocketAddress, String> clientMap = new ConcurrentHashMap<SocketAddress, String>();
+        ArrayList<String> inputData = new ArrayList<String>();
         try {
             if (args.length == 1) {
                 // not logs file
-                inputCheck(args[0], ".", "none");
+                inputData = inputCheck(args[0], ".", "none");
                 System.out.println("You are connected on port: " + args[0] + ", Searching from the directory the server runs from, and logs are printed to the server.");
             } else if (args.length == 2) {
                 // we have a dirroot to look from
-                inputCheck(args[0], args[1], "none");
+                inputData = inputCheck(args[0], args[1], "none");
                 System.out.println("You are connected on port: " + args[0] + ", Searching from directory: " + args[1] + ", and logs are printed to the server.");
             } else if (args.length == 3) {
                 // given a log file to write to
-                inputCheck(args[0], args[1], args[2]);
+                inputData = inputCheck(args[0], args[1], args[2]);
                 System.out.println("You are connected on port: " + args[0] + ", Searching from directory: " + args[1] + ", and logging to the file: " + args[2] + ".");
             } else {
                 // invlaid user input
@@ -37,13 +38,13 @@ class tcpechoserver {
             }
 
             // valid input
-            int port = Integer.parseInt(args[0]);
+            int port = Integer.parseInt(inputData.get(0));
             ServerSocketChannel c = ServerSocketChannel.open();
             c.bind(new InetSocketAddress(port));
             while (true) {
                 SocketChannel sc = c.accept();
                 System.out.println("Client Connected: " + sc.getRemoteAddress());
-                TcpServerThread t = new TcpServerThread(sc);
+                TcpServerThread t = new TcpServerThread(sc, inputData.get(1), inputData.get(2));
                 t.start();
                 if (!clientMap.containsKey(sc.getRemoteAddress())) {
                     clientMap.putIfAbsent(sc.getRemoteAddress(), t.getName());
@@ -55,15 +56,22 @@ class tcpechoserver {
         }
     }
 
-    public Boolean DirectoryExists(String fileName) {
+    public static Boolean directoryExists(String fileName) {
+        File myFile = new File(fileName);
+        if (myFile.exists() && myFile.isDirectory()) {
+            return true;
+        }
+        return false;
+    }
+
+    public static Boolean fileExists(String fileName) {
         File myFile = new File(fileName);
         if (myFile.exists() && !myFile.isDirectory()) {
             return true;
         }
         return false;
     }
-
-    public static ArrayList<Boolean> inputCheck(String p, String dir, String logfile) {
+    public static ArrayList<String> inputCheck(String p, String dir, String logFile) {
         // checks for user input and
         ArrayList<String> data = new ArrayList<String>();
 
@@ -78,23 +86,25 @@ class tcpechoserver {
         }
 
         if( !dir.equals(".")){
-            if(fileExists(dir)){
+            if(directoryExists(dir)){
                 data.add(dir);
             } else{
+                System.out.println("Your Directory root is invalid");
                 System.exit(0);
             }
         }else{
-            data.add(".")// default
+            data.add(".");// default
         }
 
         if( !logFile.equals("none")){
             if(fileExists(dir)){
-                data.add(dir);
+                data.add(logFile);
             } else{
+                System.out.println("Your logFile is invalid");
                 System.exit(0);
             }
         }else{
-            data.add("none");
+            data.add("CommandLine");
         }
 
         return data;
@@ -103,11 +113,14 @@ class tcpechoserver {
 
 class TcpServerThread extends Thread {
     SocketChannel sc;
+    String dir, log;
     private boolean running = true;
     private ArrayList<String> data;
 
-    TcpServerThread(SocketChannel channel) {
+    TcpServerThread(SocketChannel channel, String d, String l) {
         sc = channel;
+        dir = d;
+        log = l;
     }
 
     public void run() {
