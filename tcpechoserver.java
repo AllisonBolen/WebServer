@@ -31,10 +31,10 @@ class tcpechoserver {
                 // given a log file to write to
                 inputData = inputCheck(args[0], args[1], args[2]);
                 System.out.println("You are connected on port: " + args[0] + ", Searching from directory: " + args[1] + ", and logging to the file: " + args[2] + ".");
-            } else {
+            } else if (args.length == 0){
                 // invlaid user input
-                System.out.println("You have the wrong number of agruments. Use: 'java <program-name> <port-num> <path-to-root-dir> <logfile>'.");
-                System.exit(0);
+                System.out.println("You will be using the default settings: port=8080, dirroot=., logFile=commandline. To manually set them use: 'java <program-name> <port-num> <path-to-root-dir> <logfile>'.");
+                inputData = inputCheck("",".","none");
             }
 
             // valid input
@@ -76,14 +76,25 @@ class tcpechoserver {
         ArrayList<String> data = new ArrayList<String>();
 
         // check port value
-        int port = Integer.parseInt(p);
-        if(port < 1000 || port > 65535){
-            System.out.println("Your port is invalid");
-            System.exit(0);
+        if (!p.equals("")){
+            try{
+                int port = Integer.parseInt(p);
+            }catch(Exception e){
+                System.out.println("Your port is invalid");
+                System.exit(0);
+            }
+            int port = Integer.parseInt(p);
+            if(port < 1000 || port > 65535){
+                System.out.println("Your port is invalid");
+                System.exit(0);
+            }
+            else{
+                data.add(p);
+            }
+        }else{
+            data.add("8080");
         }
-        else{
-            data.add(p);
-        }
+
 
         if( !dir.equals(".")){
             if(directoryExists(dir)){
