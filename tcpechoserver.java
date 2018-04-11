@@ -84,6 +84,7 @@ class TcpServerThread extends Thread {
                 //System.out.println(message);
                 // call parse
                 data = parseRequest(message);
+                System.out.println(data);
                 createResponse(new ArrayList<String>());
             }
         } catch (IOException e) {
@@ -97,13 +98,12 @@ class TcpServerThread extends Thread {
         // parse the data into a list contain all words sent in seperated by space
         Scanner line = new Scanner(a);
         ArrayList<String> data = new ArrayList<String>();
-        System.out.print("this is the data we were sent:\n");
 
         while (line.hasNext()) {
             // System.out.print(line.next() + " \n");
             data.add( line.next());
         }
-        return null;
+        return data;
     }
 
     public byte[] fileToBytes(File file){
