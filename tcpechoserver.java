@@ -55,8 +55,28 @@ class tcpechoserver {
         }
     }
 
-    public static ArrayList<Boolean> inputCheck(String port, String dir, String logfile) {
+    public Boolean fileExists(String fileName) {
+        File myFile = new File(fileName);
+        if (myFile.exists() && !myFile.isDirectory()) {
+            return true;
+        }
+        return false;
+    }
+
+    public static ArrayList<Boolean> inputCheck(String p, String dir, String logfile) {
         // checks for user input and
+
+        // check port value
+        int port = Integer.parseInt(p);
+        if(port < 1000 || port > 65535){
+            System.out.println("Your port is invalid");
+            System.exit(0);
+        }
+
+        if( !dir.equals("none")){
+            
+        }
+
         return null;
     }
 }
