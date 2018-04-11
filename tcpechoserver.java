@@ -237,6 +237,16 @@ class TcpServerThread extends Thread {
 				"\r\n";
 			send(sc, valResponse, filename);
 		}
+		else if(fileExists(filename) && (info.get(1).contains(".pdf") || info.get(1).contains(".PDF"))){
+			String valResponse = "HTTP/1.1 200 OK\r\n" +
+				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
+				"Content-Length:" + (int)(fileToBytes(new File(filename))).length + "\r\n" +
+				"Content-Type: application/pdf\r\n" +
+				//"Connection: Closed\r\n" +
+				"\r\n";
+			send(sc, valResponse, filename);
+		}
 		else{
 			String notFoundResponse = "HTTP/1.1 404 NOT FOUND\r\n" +
 				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
