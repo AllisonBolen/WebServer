@@ -111,7 +111,7 @@ class tcpechoserver {
         }
 
         if (!logFile.equals("none")) {
-            if (fileExists(dir)) {
+            if (fileExists(logFile)) {
                 data.add(logFile);
             } else {
                 System.out.println("Your logFile is invalid");
