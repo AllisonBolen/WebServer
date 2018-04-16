@@ -3,15 +3,19 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.util.Scanner;
-import java.util.concurrent.ConcurrentHashMap; // https://stackoverflow.com/questions/2836267/concurrenthashmap-in-java
+import java.util.concurrent.*; // https://stackoverflow.com/questions/2836267/concurrenthashmap-in-java
 import java.util.Vector;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.TimeZone;
+
 import java.util.Date;
 import java.text.DateFormat;
+
+
+import java.util.regex.*;
 
 
 class tcpechoserver {
@@ -42,19 +46,22 @@ class tcpechoserver {
             // valid input
             int port = Integer.parseInt(inputData.get(0));
             ServerSocketChannel c = ServerSocketChannel.open();
+            PrinterThread printer = new PrinterThread(dir+inputData.get(2));
+            printer.start();
             c.bind(new InetSocketAddress(port));
             while (true) {
                 SocketChannel sc = c.accept();
                 System.out.println("Client Connected: " + sc.getRemoteAddress());
-                TcpServerThread t = new TcpServerThread(sc, inputData.get(1), inputData.get(2));
+                TcpServerThread t = new TcpServerThread(sc, inputData.get(1), printer);
                 t.start();
+                //System.out.println(printer.getState() + " " + t.getState());
                 if (!clientMap.containsKey(sc.getRemoteAddress())) {
                     clientMap.putIfAbsent(sc.getRemoteAddress(), t.getName());
                 }
                 System.out.println(clientMap.toString());
             }
         } catch (IOException e) {
-            System.out.println("Got an Exception");
+            System.out.println("Got an Exception 4: " + e);
         }
     }
 
@@ -106,15 +113,15 @@ class tcpechoserver {
                 System.exit(0);
             }
         } else {
-            data.add(".");// default
+            data.add("./pages/");// default
         }
 
         if (!logFile.equals("none")) {
-            if (fileExists(dir)) {
-                data.add(logFile);
-            } else {
-                System.out.println("Your logFile is invalid");
+            if (fileExists(logFile)) {
+                System.out.println("Your logFile is invalid, a file by that name already exists.");
                 System.exit(0);
+            } else {
+                data.add(logFile);
             }
         } else {
             data.add("CommandLine");
@@ -124,20 +131,22 @@ class tcpechoserver {
     }
 }
 
+//______________________________________________________________________
 class TcpServerThread extends Thread {
     SocketChannel sc;
-    String dir, log;
+    String dir;
+    PrinterThread printer;
     private boolean running = true;
-    private ArrayList<String> data;
+    //private ArrayList<String> data = new ArrayList<String>();
 
-    TcpServerThread(SocketChannel channel, String d, String l) {
+    TcpServerThread(SocketChannel channel, String d, PrinterThread p) {
         sc = channel;
         dir = d;
-        log = l;
+        printer = p;
     }
 
     public void run() {
-
+        ArrayList<String> data = new ArrayList<String>();
         // main method ?
         try {
             while (running) {
@@ -150,12 +159,18 @@ class TcpServerThread extends Thread {
                 //System.out.println(message);
                 // call parse
                 data = parseRequest(message);
-                System.out.println(data);
-                createResponse(data);
+                if (data.size() != 0) {
+                    //System.out.println(data);
+                    printer.addToQueue(message);
+                    createResponse(data);
+                } else {
+                    // got an empty request
+                }
+
             }
         } catch (IOException e) {
             // print error
-            System.out.println("Got an IO Exception");
+            System.out.println("Got an IO Exception: " + e);
         }
 
     }
@@ -163,13 +178,12 @@ class TcpServerThread extends Thread {
     public ArrayList<String> parseRequest(String a) {
         // parse the data into a list contain all words sent in seperated by space
         Scanner line = new Scanner(a);
-        ArrayList<String> data = new ArrayList<String>();
-
+        ArrayList<String> requestData = new ArrayList<String>();
         while (line.hasNext()) {
             // System.out.print(line.next() + " \n");
-            data.add(line.next());
+            requestData.add(line.next());
         }
-        return data;
+        return requestData;
     }
 
     public byte[] fileToBytes(File file) {
@@ -185,41 +199,50 @@ class TcpServerThread extends Thread {
         return null;
     }
 
-    public byte[] createResponse(ArrayList<String> info) {
+    public void createResponse(ArrayList<String> info) {
         // create the response string
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat dateFormat = new SimpleDateFormat(
                 "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-        String filename = info.get(1).substring(1, info.get(1).length());
+        String filename = dir + info.get(1).substring(1, info.get(1).length());
         //boolean modifiedSince = modifiedSince(info, filename);
-
+        Boolean dotdot = Pattern.matches("([\\S|\\s|]/\\.\\.[\\S|\\s|])", filename);
         //System.out.println(filename);
 
         if (info.get(0).equals("GET") && info.contains("keep-alive")) {
-
-            if (info.get(1).equals("/") || info.get(1).equals("/index.html")) {
+            if (dotdot) {
+                //System.out.println("dotdot");
+                String notFoundResponse = "HTTP/1.1 404 NOT FOUND\r\n" +
+                        "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                        "Last-Modified: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                        "Content-Length:" + (int) (fileToBytes(new File("notfound.html"))).length + "\r\n" +
+                        "Content-Type: text/html\r\n" +
+                        //"Connection: Closed\r\n" +
+                        "\r\n";
+                send(sc, notFoundResponse, "notfound.html");
+            } else if (info.get(1).equals("/") || info.get(1).equals("/index.html")) {
                 if (modifiedSince(info, "index.html")) {
                     String homeResponse = "HTTP/1.1 200 OK\r\n" +
                             "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-                            "Last-Modified: " + getLastModified("index.html") + "\r\n" +
-                            "Content-Length: " + (int) (fileToBytes(new File("index.html"))).length + "\r\n" +
+                            "Last-Modified: " + getLastModified(dir + "index.html") + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(dir + "index.html"))).length + "\r\n" +
                             "Content-Type: text/html\r\n" +
                             "Connection: Keep-Alive\r\n" +
                             "Keep-Alive: timeout=20, max=100\r\n" +
                             "\r\n";
-                    send(sc, homeResponse, "index.html");
+                    send(sc, homeResponse, dir + "index.html");
                 } else {
                     String homeResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
                             "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-                            "Last-Modified: " + getLastModified("index.html") + "\r\n" +
-                            "Content-Length: " + (int) (fileToBytes(new File("index.html"))).length + "\r\n" +
+                            "Last-Modified: " + getLastModified(dir + "index.html") + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(dir + "index.html"))).length + "\r\n" +
                             "Content-Type: text/html\r\n" +
                             "Connection: Keep-Alive\r\n" +
                             "Keep-Alive: timeout=20, max=100\r\n" +
                             "\r\n";
-                    send(sc, homeResponse, "index.html");
+                    send(sc, homeResponse, dir + "index.html");
                 }
             } else if (fileExists(filename) && (info.get(1).contains(".html") || info.get(1).contains(".HTML"))) {
                 if (modifiedSince(info, filename)) {
@@ -325,26 +348,26 @@ class TcpServerThread extends Thread {
         } else if (info.get(0).equals("GET") && info.contains("close")) {
 
             if (info.get(1).equals("/") || info.get(1).equals("/index.html")) {
-                if (modifiedSince(info, "index.html")) {
+                if (modifiedSince(info, dir + "index.html")) {
                     String homeResponse = "HTTP/1.1 200 OK\r\n" +
                             "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-                            "Last-Modified: " + getLastModified("index.html") + "\r\n" +
-                            "Content-Length: " + (int) (fileToBytes(new File("index.html"))).length + "\r\n" +
+                            "Last-Modified: " + getLastModified(dir + "index.html") + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(dir + "index.html"))).length + "\r\n" +
                             "Content-Type: text/html\r\n" +
                             "Connection: close\r\n" +
                             //"Keep-Alive:timeout=20, max=100\r\n" +
                             "\r\n";
-                    send(sc, homeResponse, "index.html");
+                    send(sc, homeResponse, dir + "index.html");
                 } else {
                     String homeResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
                             "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-                            "Last-Modified: " + getLastModified("index.html") + "\r\n" +
-                            "Content-Length: " + (int) (fileToBytes(new File("index.html"))).length + "\r\n" +
+                            "Last-Modified: " + getLastModified(dir + "index.html") + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(dir + "index.html"))).length + "\r\n" +
                             "Content-Type: text/html\r\n" +
                             "Connection: close\r\n" +
                             //"Keep-Alive:timeout=20, max=100\r\n" +
                             "\r\n";
-                    send(sc, homeResponse, "index.html");
+                    send(sc, homeResponse, dir + "index.html");
                 }
             } else if (fileExists(filename) && (info.get(1).contains(".html") || info.get(1).contains(".HTML"))) {
                 if (modifiedSince(info, filename)) {
@@ -444,8 +467,6 @@ class TcpServerThread extends Thread {
                         //"Keep-Alive:timeout=20, max=100\r\n" +
                         "\r\n";
                 send(sc, notFoundResponse, "notfound.html");
-
-
             }
         } else {
             String notSupportedResponse = "HTTP/1.1 501 NOT IMPLEMENTED\r\n" +
@@ -458,11 +479,11 @@ class TcpServerThread extends Thread {
                     "\r\n";
             send(sc, notSupportedResponse, "notsupported.html");
         }
-        return null;
-
     }
 
     public void send(SocketChannel socket, String info, String filename) {
+        //tem.out.println("the filename is: " + filename);
+        printer.addToQueue(info);
         ByteBuffer buf = ByteBuffer.allocate((int) (info.getBytes().length) + (int) fileToBytes(new File(filename)).length);
         buf.put(info.getBytes());
         buf.put(fileToBytes(new File(filename)));
@@ -472,11 +493,9 @@ class TcpServerThread extends Thread {
 
         try {
             socket.write(buf);
-
-
         } catch (IOException e) {
             // print error
-            System.out.println("Got an IO Exception HERE 5");
+            System.out.println("Got an IO Exception HERE 5: " + e);
         }
     }
 
@@ -501,7 +520,7 @@ class TcpServerThread extends Thread {
         if (myFile.exists() && !myFile.isDirectory()) {
             //System.out.println("Size of file: " + fileSize);
             double count = myFile.length();
-            System.out.println("size of file: " + count);
+            //System.out.println("size of file: " + count);
             return count;
         } else
             System.out.println("The file does not exist!");
@@ -545,4 +564,58 @@ class TcpServerThread extends Thread {
 
         return modified;
     }
+}
+
+//__________________________________________________________
+class PrinterThread extends Thread {
+    BlockingQueue<String> queue = new LinkedBlockingQueue<String>();
+    String log;
+    private boolean running = true;
+
+    PrinterThread(String logFile) {
+        //System.out.println("WE Made the printer.");
+        log = logFile;
+    }
+
+    public void setQueue(BlockingQueue<String> queue) {
+        this.queue = queue;
+    }
+
+    public void addToQueue(String data) {
+        //System.out.println("Add to the queue printer.");
+        try {
+            queue.put(data);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    public void run() {
+        try {
+            while (running) {
+                String info = queue.poll();
+                if (info != null) {
+                    //System.out.println("Pull form the printer.");
+                    if (log.equals("CommandLine")) {
+                        System.out.print(info);
+                    } else {
+                        fileOutStream(log, info);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Something broke: "+ e);
+        }
+    }
+
+    public void fileOutStream(String fileName, String str) {
+        try (FileWriter fw = new FileWriter(fileName, true);
+             BufferedWriter bw = new BufferedWriter(fw);
+             PrintWriter out = new PrintWriter(bw)) {
+            out.println(str);
+        } catch (IOException e) {
+            System.out.println("Something broke: "+ e);
+        }
+    }
+
 }
