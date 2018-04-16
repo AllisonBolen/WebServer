@@ -31,23 +31,23 @@ class tcpechoserver {
         for (String input : args) {
 
             if (input.substring(0, input.indexOf("=")).equals("-port")) {// we have been given a port value
-                inPort = input.substring(input.indexOf("=")+1);
+                inPort = input.substring(input.indexOf("=") + 1);
             } else {
                 inPort = "";
             }
             if (input.substring(0, input.indexOf("=")).equals("-docroot")) {// we have been given a port value
-                inDir = input.substring(input.indexOf("=")+1);
+                inDir = input.substring(input.indexOf("=") + 1);
             } else {
                 inDir = ".";
             }
             if (input.substring(0, input.indexOf("=")).equals("-logfile")) {// we have been given a port value
-                inLog = input.substring(input.indexOf("=")+1);
+                inLog = input.substring(input.indexOf("=") + 1);
             } else {
                 inLog = "none";
             }
         }
-        inputData = inputCheck(inPort,inDir,inLog);
-        System.out.println("You will be using the settings: -port="+inputData.get(0)+", -docroot="+inputData.get(1)+", logFile="+inputData.get(2)+".");
+        inputData = inputCheck(inPort, inDir, inLog);
+        System.out.println("You will be using the settings: -port=" + inputData.get(0) + ", -docroot=" + inputData.get(1) + ", logFile=" + inputData.get(2) + ".");
 
         try {
             // valid input
@@ -61,7 +61,6 @@ class tcpechoserver {
                 System.out.println("Client Connected: " + sc.getRemoteAddress());
                 TcpServerThread t = new TcpServerThread(sc, inputData.get(1), printer);
                 t.start();
-                //System.out.println(printer.getState() + " " + t.getState());
                 if (!clientMap.containsKey(sc.getRemoteAddress())) {
                     clientMap.putIfAbsent(sc.getRemoteAddress(), t.getName());
                 }
@@ -157,21 +156,37 @@ class TcpServerThread extends Thread {
         // main method ?
         try {
             while (running) {
+                sc.configureBlocking(false);
                 ByteBuffer buffer = ByteBuffer.allocate(4096);
-                sc.read(buffer);
-                buffer.flip();
-                byte[] a = new byte[buffer.remaining()];
-                buffer.get(a);
-                String message = new String(a);
-                //System.out.println(message);
-                // call parse
-                data = parseRequest(message);
-                if (data.size() != 0) {
-                    //System.out.println(data);
-                    printer.addToQueue(message);
-                    createResponse(data);
-                } else {
-                    // got an empty request
+                long endTimeMillis = System.currentTimeMillis() + 20000;
+                long startTimeMillis = System.currentTimeMillis();
+                while (buffer.position() == 0) {
+                    sc.read(buffer);
+                    startTimeMillis = startTimeMillis + (System.currentTimeMillis() - startTimeMillis);
+                    if (startTimeMillis >= endTimeMillis) {
+                        System.out.println("timed out");
+                        System.out.println("close 1");
+                        sc.close();
+                        System.out.println("close 2");
+                        setRunning(false);
+                        break;
+                    }
+                }
+                if (running) {
+                    buffer.flip();
+                    byte[] a = new byte[buffer.remaining()];
+                    buffer.get(a);
+                    String message = new String(a);
+                    //System.out.println(message);
+                    // call parse
+                    data = parseRequest(message);
+                    if (data.size() != 0) {
+                        //System.out.println(data);
+                        printer.addToQueue(message);
+                        createResponse(data);
+                    } else {
+                        // got an empty request
+                    }
                 }
 
             }
@@ -216,8 +231,8 @@ class TcpServerThread extends Thread {
         String filename = info.get(1).substring(1, info.get(1).length());
         //boolean modifiedSince = modifiedSince(info, filename);
         Boolean dotdot = Pattern.matches("([\\S|\\s|]/\\.\\.[\\S|\\s|])", filename);
-        System.out.println(dir+filename);
-        filename = dir+filename;
+        System.out.println(dir + filename);
+        filename = dir + filename;
 
         if (info.get(0).equals("GET") && info.contains("keep-alive")) {
             if (dotdot) {
