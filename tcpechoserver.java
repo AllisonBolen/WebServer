@@ -119,7 +119,7 @@ class tcpechoserver {
                 System.exit(0);
             }
         } else {
-            data.add(".");// default
+            data.add("./");// default
         }
 
         if (!logFile.equals("none")) {
