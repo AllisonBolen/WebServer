@@ -213,10 +213,11 @@ class TcpServerThread extends Thread {
                 "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-        String filename = dir + info.get(1).substring(1, info.get(1).length());
+        String filename = info.get(1).substring(1, info.get(1).length());
         //boolean modifiedSince = modifiedSince(info, filename);
         Boolean dotdot = Pattern.matches("([\\S|\\s|]/\\.\\.[\\S|\\s|])", filename);
-        System.out.println(filename);
+        System.out.println(dir+filename);
+        filename = dir+filename;
 
         if (info.get(0).equals("GET") && info.contains("keep-alive")) {
             if (dotdot) {
