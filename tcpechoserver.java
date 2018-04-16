@@ -24,25 +24,32 @@ class tcpechoserver {
         // map to store all connected client ips and threads
         ConcurrentHashMap<SocketAddress, String> clientMap = new ConcurrentHashMap<SocketAddress, String>();
         ArrayList<String> inputData = new ArrayList<String>();
-        try {
-            if (args.length == 1) {
-                // not logs file
-                inputData = inputCheck(args[0], ".", "none");
-                System.out.println("You are connected on port: " + args[0] + ", Searching from the directory the server runs from, and logs are printed to the server.");
-            } else if (args.length == 2) {
-                // we have a dirroot to look from
-                inputData = inputCheck(args[0], args[1], "none");
-                System.out.println("You are connected on port: " + args[0] + ", Searching from directory: " + args[1] + ", and logs are printed to the server.");
-            } else if (args.length == 3) {
-                // given a log file to write to
-                inputData = inputCheck(args[0], args[1], args[2]);
-                System.out.println("You are connected on port: " + args[0] + ", Searching from directory: " + args[1] + ", and logging to the file: " + args[2] + ".");
-            } else if (args.length == 0) {
-                // invlaid user input
-                System.out.println("You will be using the default settings: port=8080, dirroot=., logFile=commandline. To manually set them use: 'java <program-name> <port-num> <path-to-root-dir> <logfile>'.");
-                inputData = inputCheck("", ".", "none");
-            }
+        String inPort, inDir, inLog;
+        inPort = "";
+        inDir = ".";
+        inLog = "none";
+        for (String input : args) {
 
+            if (input.substring(0, input.indexOf("=")).equals("-port")) {// we have been given a port value
+                inPort = input.substring(input.indexOf("=")+1);
+            } else {
+                inPort = "";
+            }
+            if (input.substring(0, input.indexOf("=")).equals("-docroot")) {// we have been given a port value
+                inDir = input.substring(input.indexOf("=")+1);
+            } else {
+                inDir = ".";
+            }
+            if (input.substring(0, input.indexOf("=")).equals("-logfile")) {// we have been given a port value
+                inLog = input.substring(input.indexOf("=")+1);
+            } else {
+                inLog = "none";
+            }
+        }
+        inputData = inputCheck(inPort,inDir,inLog);
+        System.out.println("You will be using the settings: -port="+inputData.get(0)+", -docroot="+inputData.get(1)+", logFile="+inputData.get(2)+".");
+
+        try {
             // valid input
             int port = Integer.parseInt(inputData.get(0));
             ServerSocketChannel c = ServerSocketChannel.open();
@@ -90,12 +97,12 @@ class tcpechoserver {
             try {
                 int port = Integer.parseInt(p);
             } catch (Exception e) {
-                System.out.println("Your port is invalid");
+                System.out.println("Your -port is invalid");
                 System.exit(0);
             }
             int port = Integer.parseInt(p);
             if (port < 1000 || port > 65535) {
-                System.out.println("Your port is invalid");
+                System.out.println("Your -port is invalid");
                 System.exit(0);
             } else {
                 data.add(p);
@@ -109,7 +116,7 @@ class tcpechoserver {
             if (directoryExists(dir)) {
                 data.add(dir);
             } else {
-                System.out.println("Your Directory root is invalid");
+                System.out.println("Your -docroot root is invalid");
                 System.exit(0);
             }
         } else {
@@ -118,7 +125,7 @@ class tcpechoserver {
 
         if (!logFile.equals("none")) {
             if (fileExists(logFile)) {
-                System.out.println("Your logFile is invalid, a file by that name already exists.");
+                System.out.println("Your -logfile is invalid, a file by that name already exists.");
                 System.exit(0);
             } else {
                 data.add(logFile);
@@ -209,7 +216,7 @@ class TcpServerThread extends Thread {
         String filename = dir + info.get(1).substring(1, info.get(1).length());
         //boolean modifiedSince = modifiedSince(info, filename);
         Boolean dotdot = Pattern.matches("([\\S|\\s|]/\\.\\.[\\S|\\s|])", filename);
-        //System.out.println(filename);
+        System.out.println(filename);
 
         if (info.get(0).equals("GET") && info.contains("keep-alive")) {
             if (dotdot) {
@@ -604,7 +611,7 @@ class PrinterThread extends Thread {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Something broke: "+ e);
+            System.out.println("Something broke: " + e);
         }
     }
 
@@ -614,7 +621,7 @@ class PrinterThread extends Thread {
              PrintWriter out = new PrintWriter(bw)) {
             out.println(str);
         } catch (IOException e) {
-            System.out.println("Something broke: "+ e);
+            System.out.println("Something broke: " + e);
         }
     }
 
