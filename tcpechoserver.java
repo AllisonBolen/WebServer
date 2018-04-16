@@ -10,6 +10,8 @@ import java.util.Calendar;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.Date;
+import java.text.DateFormat;
 
 
 class tcpechoserver {
@@ -31,10 +33,10 @@ class tcpechoserver {
                 // given a log file to write to
                 inputData = inputCheck(args[0], args[1], args[2]);
                 System.out.println("You are connected on port: " + args[0] + ", Searching from directory: " + args[1] + ", and logging to the file: " + args[2] + ".");
-            } else if (args.length == 0){
+            } else if (args.length == 0) {
                 // invlaid user input
                 System.out.println("You will be using the default settings: port=8080, dirroot=., logFile=commandline. To manually set them use: 'java <program-name> <port-num> <path-to-root-dir> <logfile>'.");
-                inputData = inputCheck("",".","none");
+                inputData = inputCheck("", ".", "none");
             }
 
             // valid input
@@ -71,50 +73,50 @@ class tcpechoserver {
         }
         return false;
     }
+
     public static ArrayList<String> inputCheck(String p, String dir, String logFile) {
         // checks for user input and
         ArrayList<String> data = new ArrayList<String>();
 
         // check port value
-        if (!p.equals("")){
-            try{
+        if (!p.equals("")) {
+            try {
                 int port = Integer.parseInt(p);
-            }catch(Exception e){
+            } catch (Exception e) {
                 System.out.println("Your port is invalid");
                 System.exit(0);
             }
             int port = Integer.parseInt(p);
-            if(port < 1000 || port > 65535){
+            if (port < 1000 || port > 65535) {
                 System.out.println("Your port is invalid");
                 System.exit(0);
-            }
-            else{
+            } else {
                 data.add(p);
             }
-        }else{
+        } else {
             data.add("8080");
         }
 
 
-        if( !dir.equals(".")){
-            if(directoryExists(dir)){
+        if (!dir.equals(".")) {
+            if (directoryExists(dir)) {
                 data.add(dir);
-            } else{
+            } else {
                 System.out.println("Your Directory root is invalid");
                 System.exit(0);
             }
-        }else{
+        } else {
             data.add(".");// default
         }
 
-        if( !logFile.equals("none")){
-            if(fileExists(dir)){
+        if (!logFile.equals("none")) {
+            if (fileExists(dir)) {
                 data.add(logFile);
-            } else{
+            } else {
                 System.out.println("Your logFile is invalid");
                 System.exit(0);
             }
-        }else{
+        } else {
             data.add("CommandLine");
         }
 
@@ -165,20 +167,19 @@ class TcpServerThread extends Thread {
 
         while (line.hasNext()) {
             // System.out.print(line.next() + " \n");
-            data.add( line.next());
+            data.add(line.next());
         }
         return data;
     }
 
-    public byte[] fileToBytes(File file){
-        try{
+    public byte[] fileToBytes(File file) {
+        try {
             byte[] bytesArray = new byte[(int) file.length()];
             FileInputStream fis = new FileInputStream(file);
             fis.read(bytesArray); //read file into bytes[]
             fis.close();
             return bytesArray;
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             System.out.println("Error Loading file");
         }
         return null;
@@ -191,92 +192,278 @@ class TcpServerThread extends Thread {
                 "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
         dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-	String filename = info.get(1).substring(1, info.get(1).length());
-	//System.out.println("FILENAME REQUESTED: " + filename);
+        String filename = info.get(1).substring(1, info.get(1).length());
+        //boolean modifiedSince = modifiedSince(info, filename);
 
-	if(info.get(0).equals("GET")){
+        //System.out.println(filename);
 
-		if(info.get(1).equals("/") || info.get(1).equals("/index.html")){
-			String homeResponse = "HTTP/1.1 200 OK\r\n" +
-				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-				"Content-Length:" + (int)(fileToBytes(new File("index.html"))).length + "\r\n" +
-				"Content-Type: text/html\r\n" +
-				//"Connection: Closed\r\n" +
-				"\r\n";
-			send(sc, homeResponse, "index.html");
-		}
-		else if(fileExists(filename) && (info.get(1).contains(".html") || info.get(1).contains(".HTML"))){
-			String valResponse = "HTTP/1.1 200 OK\r\n" +
-				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-				"Content-Length:" + (int)(fileToBytes(new File(filename))).length + "\r\n" +
-				"Content-Type: text/html\r\n" +
-				//"Connection: Closed\r\n" +
-				"\r\n";
-			send(sc, valResponse, filename);
-		}
+        if (info.get(0).equals("GET") && info.contains("keep-alive")) {
 
-		else if(fileExists(filename) && (info.get(1).contains(".txt") || info.get(1).contains(".TXT"))){
-			String valResponse = "HTTP/1.1 200 OK\r\n" +
-				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-				"Content-Length:" + (int)(fileToBytes(new File(filename))).length + "\r\n" +
-				"Content-Type: text/plain\r\n" +
-				//"Connection: Closed\r\n" +
-				"\r\n";
-			send(sc, valResponse, filename);
-		}
-		else if(fileExists(filename) && (info.get(1).contains(".jpeg") || info.get(1).contains(".JPEG") || info.get(1).contains(".jpg") || info.get(1).contains(".JPG"))){
-			String valResponse = "HTTP/1.1 200 OK\r\n" +
-				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-				"Content-Length:" + (int)(fileToBytes(new File(filename))).length + "\r\n" +
-				"Content-Type: image/jpeg\r\n" +
-				//"Connection: Closed\r\n" +
-				"\r\n";
-			send(sc, valResponse, filename);
-		}
-		else if(fileExists(filename) && (info.get(1).contains(".pdf") || info.get(1).contains(".PDF"))){
-			String valResponse = "HTTP/1.1 200 OK\r\n" +
-				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-				"Content-Length:" + (int)(fileToBytes(new File(filename))).length + "\r\n" +
-				"Content-Type: application/pdf\r\n" +
-				//"Connection: Closed\r\n" +
-				"\r\n";
-			send(sc, valResponse, filename);
-		}
-		else{
-			String notFoundResponse = "HTTP/1.1 404 NOT FOUND\r\n" +
-				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-				"Last-Modified: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-				"Content-Length:" + (int)(fileToBytes(new File("notfound.html"))).length + "\r\n" +
-				"Content-Type: text/html\r\n" +
-				//"Connection: Closed\r\n" +
-				"\r\n";
-			send(sc, notFoundResponse, "notfound.html");		
-		
+            if (info.get(1).equals("/") || info.get(1).equals("/index.html")) {
+                if (modifiedSince(info, "index.html")) {
+                    String homeResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified("index.html") + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File("index.html"))).length + "\r\n" +
+                            "Content-Type: text/html\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, homeResponse, "index.html");
+                } else {
+                    String homeResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified("index.html") + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File("index.html"))).length + "\r\n" +
+                            "Content-Type: text/html\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, homeResponse, "index.html");
+                }
+            } else if (fileExists(filename) && (info.get(1).contains(".html") || info.get(1).contains(".HTML"))) {
+                if (modifiedSince(info, filename)) {
+                    String valResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: text/html\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                } else {
+                    String valResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length :" + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: text/html\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                }
+            } else if (fileExists(filename) && (info.get(1).contains(".txt") || info.get(1).contains(".TXT"))) {
+                if (modifiedSince(info, filename)) {
+                    String valResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: text/plain\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                } else {
+                    String valResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: text/plain\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                }
+            } else if (fileExists(filename) && (info.get(1).contains(".jpeg") || info.get(1).contains(".JPEG") || info.get(1).contains(".jpg") || info.get(1).contains(".JPG"))) {
+                if (modifiedSince(info, filename)) {
+                    String valResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: image/jpeg\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                } else {
+                    String valResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: image/jpeg\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                }
+            } else if (fileExists(filename) && (info.get(1).contains(".pdf") || info.get(1).contains(".PDF"))) {
+                if (modifiedSince(info, filename)) {
+                    String valResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: application/pdf\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                } else {
+                    String valResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: application/pdf\r\n" +
+                            "Connection: Keep-Alive\r\n" +
+                            "Keep-Alive: timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                }
+            } else {
+                String notFoundResponse = "HTTP/1.1 404 NOT FOUND\r\n" +
+                        "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                        "Last-Modified: " + getLastModified("notfound.html") + "\r\n" +
+                        "Content-Length: " + (int) (fileToBytes(new File("notfound.html"))).length + "\r\n" +
+                        "Content-Type: text/html\r\n" +
+                        "Connection: Keep-Alive\r\n" +
+                        "Keep-Alive: timeout=20, max=100\r\n" +
+                        "\r\n";
+                send(sc, notFoundResponse, "notfound.html");
 
-		}
-	}
 
-	else{
-		String notSupportedResponse = "HTTP/1.1 501 NOT IMPLEMENTED\r\n" +
-				"Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
-				"Last-Modified: Thu, 05 Apr 2018 19:15:56 GMT\r\n" +
-				"Content-Length:" + (int)(fileToBytes(new File("notsupported.html"))).length + "\r\n" +
-				"Content-Type: text/html\r\n" +
-				//"Connection: Closed\r\n" +
-				"\r\n";
-			send(sc, notSupportedResponse, "notsupported.html");
-	}
+            }
+        } else if (info.get(0).equals("GET") && info.contains("close")) {
+
+            if (info.get(1).equals("/") || info.get(1).equals("/index.html")) {
+                if (modifiedSince(info, "index.html")) {
+                    String homeResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified("index.html") + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File("index.html"))).length + "\r\n" +
+                            "Content-Type: text/html\r\n" +
+                            "Connection: close\r\n" +
+                            //"Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, homeResponse, "index.html");
+                } else {
+                    String homeResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified("index.html") + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File("index.html"))).length + "\r\n" +
+                            "Content-Type: text/html\r\n" +
+                            "Connection: close\r\n" +
+                            //"Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, homeResponse, "index.html");
+                }
+            } else if (fileExists(filename) && (info.get(1).contains(".html") || info.get(1).contains(".HTML"))) {
+                if (modifiedSince(info, filename)) {
+                    String valResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: text/html\r\n" +
+                            "Connection: close\r\n" +
+                            //"Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                } else {
+                    String valResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: text/html\r\n" +
+                            "Connection: close\r\n" +
+                            //Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                }
+            } else if (fileExists(filename) && (info.get(1).contains(".txt") || info.get(1).contains(".TXT"))) {
+                if (modifiedSince(info, filename)) {
+                    String valResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: text/plain\r\n" +
+                            "Connection: close\r\n" +
+                            //"Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                } else {
+                    String valResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: text/plain\r\n" +
+                            "Connection: close\r\n" +
+                            //"Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                }
+            } else if (fileExists(filename) && (info.get(1).contains(".jpeg") || info.get(1).contains(".JPEG") || info.get(1).contains(".jpg") || info.get(1).contains(".JPG"))) {
+                if (modifiedSince(info, filename)) {
+                    String valResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: image/jpeg\r\n" +
+                            "Connection: close\r\n" +
+                            //"Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                } else {
+                    String valResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: image/jpeg\r\n" +
+                            "Connection: close\r\n" +
+                            //"Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                }
+            } else if (fileExists(filename) && (info.get(1).contains(".pdf") || info.get(1).contains(".PDF"))) {
+                if (modifiedSince(info, filename)) {
+                    String valResponse = "HTTP/1.1 200 OK\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: application/pdf\r\n" +
+                            "Connection: close\r\n" +
+                            //"Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                } else {
+                    String valResponse = "HTTP/1.1 304 NOT MODIFIED\r\n" +
+                            "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                            "Last-Modified: " + getLastModified(filename) + "\r\n" +
+                            "Content-Length: " + (int) (fileToBytes(new File(filename))).length + "\r\n" +
+                            "Content-Type: application/pdf\r\n" +
+                            "Connection: close\r\n" +
+                            //"Keep-Alive:timeout=20, max=100\r\n" +
+                            "\r\n";
+                    send(sc, valResponse, filename);
+                }
+            } else {
+                String notFoundResponse = "HTTP/1.1 404 NOT FOUND\r\n" +
+                        "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                        "Last-Modified: " + getLastModified("notfound.html") + "\r\n" +
+                        "Content-Length: " + (int) (fileToBytes(new File("notfound.html"))).length + "\r\n" +
+                        "Content-Type: text/html\r\n" +
+                        "Connection: close\r\n" +
+                        //"Keep-Alive:timeout=20, max=100\r\n" +
+                        "\r\n";
+                send(sc, notFoundResponse, "notfound.html");
+
+
+            }
+        } else {
+            String notSupportedResponse = "HTTP/1.1 501 NOT IMPLEMENTED\r\n" +
+                    "Date: " + dateFormat.format(calendar.getTime()) + "\r\n" +
+                    "Last-Modified: " + getLastModified("notsupported.html") + "\r\n" +
+                    "Content-Length: " + (int) (fileToBytes(new File("notsupported.html"))).length + "\r\n" +
+                    "Content-Type: text/html\r\n" +
+                    "Connection:Keep-Alive\r\n" +
+                    "Keep-Alive:timeout=20, max=100\r\n" +
+                    "\r\n";
+            send(sc, notSupportedResponse, "notsupported.html");
+        }
         return null;
 
     }
 
     public void send(SocketChannel socket, String info, String filename) {
-        ByteBuffer buf = ByteBuffer.allocate((int)(info.getBytes().length) + (int)fileToBytes(new File(filename)).length);
+        ByteBuffer buf = ByteBuffer.allocate((int) (info.getBytes().length) + (int) fileToBytes(new File(filename)).length);
         buf.put(info.getBytes());
         buf.put(fileToBytes(new File(filename)));
         buf.flip();
@@ -285,7 +472,6 @@ class TcpServerThread extends Thread {
 
         try {
             socket.write(buf);
-
 
 
         } catch (IOException e) {
@@ -320,5 +506,43 @@ class TcpServerThread extends Thread {
         } else
             System.out.println("The file does not exist!");
         return 0;
+    }
+
+    public String getLastModified(String filename) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        File file = new File(filename);
+        String fileDate = dateFormat.format(new Date(file.lastModified()));
+        return fileDate;
+    }
+
+    public boolean modifiedSince(ArrayList<String> info, String filename) {
+        boolean modified = false;
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+        int index = info.indexOf("If-Modified-Since:");
+
+        if (index == -1)
+            modified = true;
+
+        else {
+
+            String request = info.get(index + 1) + " " + info.get(index + 2) +
+                    " " + info.get(index + 3) + " " + info.get(index + 4) + " " +
+                    info.get(index + 5) + " " + info.get(index + 6);
+            String lastMod = getLastModified(filename);
+
+            try {
+
+                if (dateFormat.parse(request).before(dateFormat.parse(lastMod)))
+                    modified = true;
+
+            } catch (Exception e) {
+                System.out.println("Got an error in the ModifiedSince method");
+            }
+        }
+
+        return modified;
     }
 }
