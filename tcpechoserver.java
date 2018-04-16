@@ -498,7 +498,7 @@ class TcpServerThread extends Thread {
                     "\r\n";
             send(sc, notSupportedResponse, "notsupported.html");
         }
-        if(info.contains("Connection: ")&& info.contains("close")){
+        if(info.contains("Connection: ") && info.contains("close")){
             try {
                 System.out.println("Closed connection: " + sc.getRemoteAddress() + ", " + this.getName());
                 sc.close();
@@ -510,15 +510,11 @@ class TcpServerThread extends Thread {
     }
 
     public void send(SocketChannel socket, String info, String filename) {
-        //tem.out.println("the filename is: " + filename);
-        printer.addToQueue(info);
+        printer.addToQueue(info.substring(0,info.indexOf("\r\n"))+"\n");
         ByteBuffer buf = ByteBuffer.allocate((int) (info.getBytes().length) + (int) fileToBytes(new File(filename)).length);
         buf.put(info.getBytes());
         buf.put(fileToBytes(new File(filename)));
         buf.flip();
-        //ByteBuffer buf = ByteBuffer.wrap(info.getBytes());
-        //buf.rewind();
-
         try {
             socket.write(buf);
         } catch (IOException e) {
@@ -594,14 +590,13 @@ class TcpServerThread extends Thread {
     }
 }
 
-//__________________________________________________________
+//__________________________This is the printer that holds a queue of all the messages the other threads need printed, it is thread safe.________________________________
 class PrinterThread extends Thread {
     BlockingQueue<String> queue = new LinkedBlockingQueue<String>();
     String log;
     private boolean running = true;
 
     PrinterThread(String logFile) {
-        //System.out.println("WE Made the printer.");
         log = logFile;
     }
 
@@ -610,7 +605,6 @@ class PrinterThread extends Thread {
     }
 
     public void addToQueue(String data) {
-        //System.out.println("Add to the queue printer.");
         try {
             queue.put(data);
         } catch (Exception e) {
@@ -623,7 +617,6 @@ class PrinterThread extends Thread {
             while (running) {
                 String info = queue.poll();
                 if (info != null) {
-                    //System.out.println("Pull form the printer.");
                     if (log.equals("CommandLine")) {
                         System.out.print(info);
                     } else {
