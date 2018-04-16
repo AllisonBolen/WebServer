@@ -46,7 +46,7 @@ class tcpechoserver {
             // valid input
             int port = Integer.parseInt(inputData.get(0));
             ServerSocketChannel c = ServerSocketChannel.open();
-            PrinterThread printer = new PrinterThread(dir+inputData.get(2));
+            PrinterThread printer = new PrinterThread(inputData.get(2));
             printer.start();
             c.bind(new InetSocketAddress(port));
             while (true) {
