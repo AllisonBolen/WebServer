@@ -164,10 +164,8 @@ class TcpServerThread extends Thread {
                     sc.read(buffer);
                     startTimeMillis = startTimeMillis + (System.currentTimeMillis() - startTimeMillis);
                     if (startTimeMillis >= endTimeMillis) {
-                        System.out.println("timed out");
-                        System.out.println("close 1");
+                        System.out.println("Time out! Closed connection: "+ sc.getRemoteAddress()+ ", " + this.getName());
                         sc.close();
-                        System.out.println("close 2");
                         setRunning(false);
                         break;
                     }
@@ -177,11 +175,9 @@ class TcpServerThread extends Thread {
                     byte[] a = new byte[buffer.remaining()];
                     buffer.get(a);
                     String message = new String(a);
-                    //System.out.println(message);
                     // call parse
                     data = parseRequest(message);
                     if (data.size() != 0) {
-                        //System.out.println(data);
                         printer.addToQueue(message);
                         createResponse(data);
                     } else {
@@ -501,6 +497,15 @@ class TcpServerThread extends Thread {
                     "Keep-Alive:timeout=20, max=100\r\n" +
                     "\r\n";
             send(sc, notSupportedResponse, "notsupported.html");
+        }
+        if(info.contains("Connection: ")&& info.contains("close")){
+            try {
+                System.out.println("Closed connection: " + sc.getRemoteAddress() + ", " + this.getName());
+                sc.close();
+                setRunning(false);
+            }catch (Exception e){
+                System.out.print("Something broke.");
+            }
         }
     }
 
