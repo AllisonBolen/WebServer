@@ -32,18 +32,12 @@ class tcpechoserver {
 
             if (input.substring(0, input.indexOf("=")).equals("-port")) {// we have been given a port value
                 inPort = input.substring(input.indexOf("=") + 1);
-            } else {
-                inPort = "";
             }
             if (input.substring(0, input.indexOf("=")).equals("-docroot")) {// we have been given a port value
                 inDir = input.substring(input.indexOf("=") + 1);
-            } else {
-                inDir = ".";
             }
             if (input.substring(0, input.indexOf("=")).equals("-logfile")) {// we have been given a port value
                 inLog = input.substring(input.indexOf("=") + 1);
-            } else {
-                inLog = "none";
             }
         }
         inputData = inputCheck(inPort, inDir, inLog);
